@@ -8681,11 +8681,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Projects\\Quarantine.Backend\\Quarantine.Backend.csproj",
+      "projectUniqueName": "C:\\Projects\\quarantine-app\\Quarantine.Backend\\Quarantine.Backend.csproj",
       "projectName": "Quarantine.Backend",
-      "projectPath": "C:\\Projects\\Quarantine.Backend\\Quarantine.Backend.csproj",
+      "projectPath": "C:\\Projects\\quarantine-app\\Quarantine.Backend\\Quarantine.Backend.csproj",
       "packagesPath": "C:\\Users\\Miguel Ortiz\\.nuget\\packages\\",
-      "outputPath": "C:\\Projects\\Quarantine.Backend\\obj\\",
+      "outputPath": "C:\\Projects\\quarantine-app\\Quarantine.Backend\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Miguel Ortiz\\AppData\\Roaming\\NuGet\\NuGet.Config"

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "29lTAwaWc18Z4/0u9pF6Cga4ADGUbj+oBqMNVy5HAbEgu0aVM7zb3Za2o0AyNGwhV80yA98oV5kNPM2NL4XPDw==",
+  "dgSpecHash": "tHb6H5PZcPFuAYw4ce1yMATRRpnU08T7bxdhaDHMCkDWrot5qbiBV0J7Cv+MkFMUTRifPUbCr7qukUOxw8u1LQ==",
   "success": true,
-  "projectFilePath": "C:\\Projects\\Quarantine.Backend\\Quarantine.Backend.csproj",
+  "projectFilePath": "C:\\Projects\\quarantine-app\\Quarantine.Backend\\Quarantine.Backend.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Miguel Ortiz\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\Miguel Ortiz\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",

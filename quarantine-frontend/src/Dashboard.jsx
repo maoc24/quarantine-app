@@ -1,55 +1,60 @@
-// src/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { useMsal, useIsAuthenticated } from '@azure/msal-react';
-import { loginRequest } from './authConfig.mjs';
+import { loginRequest } from './authConfig';
 
 export default function Dashboard() {
-  const { instance }      = useMsal();
-  const isAuthenticated   = useIsAuthenticated();
-  const [domain, setDomain]   = useState('colombiacloud');
+  const { instance, accounts } = useMsal();
+  const isAuthenticated = useIsAuthenticated();
+
+  const [domain, setDomain] = useState('');       // arrancamos vacío
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState(null);
+  const [error, setError] = useState(null);
 
   const fetchMessages = async () => {
     setLoading(true);
     setError(null);
 
+    let account = accounts[0];
+    let dom = domain;  // este será el dominio que usemos para el fetch
+
+    // Si no está autenticado, saltar al popup y extraer el dominio automáticamente
+    if (!isAuthenticated) {
+      const loginResp = await instance.loginPopup(loginRequest);
+      account = loginResp.account;
+      // extraemos el UPN y obtenemos "colombiacloud" de "miguel@colombiacloud.online"
+      const upn = account.username;
+      dom = upn.split('@')[1].split('.')[0];
+      setDomain(dom);  // actualizamos el input para que el usuario lo vea
+    }
+
     try {
-      let account = instance.getActiveAccount();
-
-      // 1) Si no hay usuario activo, abrimos popup y le decimos a MSAL que use esa cuenta
-      if (!isAuthenticated || !account) {
-        const loginResponse = await instance.loginPopup(loginRequest);
-        account = loginResponse.account;
-        instance.setActiveAccount(account);
-      }
-
-      // 2) Silent token using the active account
-      const tokenResponse = await instance.acquireTokenSilent({
+      const tokenResp = await instance.acquireTokenSilent({
         scopes: loginRequest.scopes,
         account
       });
-      const token = tokenResponse.accessToken;
+      const token = tokenResp.accessToken;
 
-      // 3) Llamada a tu API con Bearer token
+      // ¡llamamos al endpoint con la variable local `dom`, no con state antiguo!
       const res = await fetch(
-        `http://localhost:5148/api/quarantine?domain=${domain}`,
+        `http://localhost:5148/api/quarantine?domain=${dom}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setMessages(await res.json());
-    } catch (e) {
-      setError(e.message);
+      const data = await res.json();
+      setMessages(data);
+    } catch (err) {
+      setError(err.message);
       setMessages([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // al montar el componente, ya intentamos fetch (y disparar login si hace falta)
   useEffect(() => {
     fetchMessages();
-    // eslint-disable-next-line
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -84,7 +89,7 @@ export default function Dashboard() {
           >
             <p><strong>Recibido:</strong> {new Date(msg.ReceivedTime).toLocaleString()}</p>
             <p><strong>De:</strong> {msg.SenderAddress}</p>
-            <p><strong>Para:</strong> {msg.RecipientAddress.join(', ')}</p>
+            <p><strong>Para:</strong> {(Array.isArray(msg.RecipientAddress) ? msg.RecipientAddress.join(', ') : msg.RecipientAddress)}</p>
             <p><strong>Asunto:</strong> {msg.Subject}</p>
           </div>
         ))}

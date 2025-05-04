@@ -1,0 +1,11 @@
+{
+  "folders": [
+    { "path": "Quarantine.Backend" },
+    { "path": "quarantine-frontend" }
+  ],
+  "settings": {
+    "dotnet.defaultSolution": "Quarantine.Backend/Quarantine.Backend.csproj",
+    "omnisharp.useModernNet": true,
+    "csharp.suppressDotnetInstallWarning": true
+  }
+}

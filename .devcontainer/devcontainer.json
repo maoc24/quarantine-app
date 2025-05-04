@@ -1,0 +1,46 @@
+// .devcontainer/devcontainer.json
+{
+  "name": "Quarantine App Dev",
+  // Usamos la imagen con SDK .NET 9 (trae el 7 y 9 pre‑instalados).
+  "image": "mcr.microsoft.com/vscode/devcontainers/dotnet:9.0",
+
+  // Montamos tu repo en /workspace/quarantine-app
+  "workspaceFolder": "/workspace/quarantine-app",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/quarantine-app,type=bind,consistency=cached",
+
+  // Después de crear el contenedor, restauramos + compilamos el backend
+  // y luego instalamos dependencias del frontend
+  "postCreateCommand": "dotnet restore Quarantine.Backend && dotnet build Quarantine.Backend && cd quarantine-frontend && npm install",
+
+  // Exponemos ambos puertos para que puedas debuguear
+  "forwardPorts": [5148, 5173],
+
+  "remoteUser": "vscode",
+
+  "features": {
+    // Añadimos Node 18 usando Dev Container Features
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "18"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      // Extensiones que necesitamos
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        // Forzamos que Omnisharp use el SDK moderno y no baje nada
+        "omnisharp.useModernNet": true,
+        "csharp.suppressDotnetInstallWarning": true,
+        // Le indicamos el csproj principal
+        "dotnet.defaultSolution": "Quarantine.Backend/Quarantine.Backend.csproj"
+      }
+    }
+  }
+}
+
+}
