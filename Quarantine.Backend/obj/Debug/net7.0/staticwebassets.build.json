@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "gLkoR36x334XKSGS24fSqxjqWdmZCtf9oOatV1MaYOM=",
+  "Source": "Quarantine.Backend",
+  "BasePath": "_content/Quarantine.Backend",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
