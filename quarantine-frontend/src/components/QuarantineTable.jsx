@@ -1,37 +1,64 @@
 // src/components/QuarantineTable.jsx
-import { format } from 'date-fns'
+import React, { useState } from 'react';
+import PreviewModal from './PreviewModal.jsx';
 
 export default function QuarantineTable({ messages }) {
-  if (messages.length === 0) {
-    return <p className="p-4">No se encontraron mensajes.</p>
-  }
+  const [selectedMsg, setSelectedMsg] = useState(null);
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            {['Recibido','De','Para','Asunto'].map(col => (
-              <th
-                key={col}
-                className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
-              >
-                {col}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {messages.map((m, i) => (
-            <tr key={i} className="hover:bg-gray-50">
-              <td className="px-4 py-2">{format(new Date(m.ReceivedTime), 'Pp')}</td>
-              <td className="px-4 py-2">{m.SenderAddress}</td>
-              <td className="px-4 py-2">{m.RecipientAddress.join(', ')}</td>
-              <td className="px-4 py-2">{m.Subject}</td>
+    <>
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-gray-900 rounded-lg overflow-hidden">
+          <thead>
+            <tr className="bg-gray-800">
+              {['Recibido', 'De', 'Para', 'Asunto', 'Acciones'].map((h) => (
+                <th
+                  key={h}
+                  className="px-4 py-2 text-left text-sm font-medium text-gray-300"
+                >
+                  {h}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
+          </thead>
+          <tbody>
+            {messages.map((msg, i) => (
+              <tr
+                key={i}
+                className={i % 2 === 0 ? 'bg-gray-900' : 'bg-gray-800'}
+              >
+                <td className="px-4 py-2 text-gray-100 text-sm">
+                  {new Date(msg.ReceivedTime).toLocaleString()}
+                </td>
+                <td className="px-4 py-2 text-gray-100 text-sm">
+                  {msg.SenderAddress}
+                </td>
+                <td className="px-4 py-2 text-gray-100 text-sm">
+                  {Array.isArray(msg.RecipientAddress)
+                    ? msg.RecipientAddress.join(', ')
+                    : msg.RecipientAddress}
+                </td>
+                <td className="px-4 py-2 text-gray-100 text-sm">{msg.Subject}</td>
+                <td className="px-4 py-2 text-gray-100 text-sm">
+                  <button
+                    onClick={() => setSelectedMsg(msg)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md transition"
+                  >
+                    Vista
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {selectedMsg && (
+        <PreviewModal
+          message={selectedMsg}
+          onClose={() => setSelectedMsg(null)}
+        />
+      )}
+    </>
+  );
 }

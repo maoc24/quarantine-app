@@ -1,45 +1,70 @@
+// src/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
+import { subMonths } from 'date-fns';
 import { useMsal, useIsAuthenticated } from '@azure/msal-react';
-import { loginRequest } from './authConfig';
+import { loginRequest } from './authConfig.mjs';
+
+import FilterBar from './components/FilterBar.jsx';
+import QuarantineTable from './components/QuarantineTable.jsx';
 
 export default function Dashboard() {
   const { instance, accounts } = useMsal();
   const isAuthenticated = useIsAuthenticated();
 
-  const [domain, setDomain] = useState('');       // arrancamos vacío
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  // Derivar dominio del correo (sin input manual)
+  const [domain, setDomain] = useState('');
+  useEffect(() => {
+    if (isAuthenticated && accounts.length > 0) {
+      const email = accounts[0].username; // e.g. "user@empresa.online"
+      const dom = email.split('@')[1].split('.')[0];
+      setDomain(dom);
+    }
+  }, [isAuthenticated, accounts]);
 
+  // Filtros de fechas y tipo
+  const [from, setFrom] = useState(subMonths(new Date(), 1));
+  const [to, setTo]     = useState(new Date());
+  const [type, setType] = useState('all');
+
+  // Datos y estados
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState(null);
+
+  // Login explícito
+  const handleLogin = async () => {
+    try {
+      await instance.loginPopup(loginRequest);
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  // Obtiene mensajes de cuarentena
   const fetchMessages = async () => {
     setLoading(true);
     setError(null);
 
-    let account = accounts[0];
-    let dom = domain;  // este será el dominio que usemos para el fetch
-
-    // Si no está autenticado, saltar al popup y extraer el dominio automáticamente
-    if (!isAuthenticated) {
-      const loginResp = await instance.loginPopup(loginRequest);
-      account = loginResp.account;
-      // extraemos el UPN y obtenemos "colombiacloud" de "miguel@colombiacloud.online"
-      const upn = account.username;
-      dom = upn.split('@')[1].split('.')[0];
-      setDomain(dom);  // actualizamos el input para que el usuario lo vea
-    }
-
     try {
-      const tokenResp = await instance.acquireTokenSilent({
+      // 1) Token silent
+      const tokenResponse = await instance.acquireTokenSilent({
         scopes: loginRequest.scopes,
-        account
+        account: accounts[0]
       });
-      const token = tokenResp.accessToken;
+      const token = tokenResponse.accessToken;
 
-      // ¡llamamos al endpoint con la variable local `dom`, no con state antiguo!
-      const res = await fetch(
-        `http://localhost:5148/api/quarantine?domain=${dom}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      // 2) Parámetros
+      const params = new URLSearchParams({
+        domain,
+        from: from.toISOString(),
+        to:   to.toISOString(),
+        type
+      });
+
+      // 3) Llamada al backend
+      const res = await fetch(`http://localhost:5148/api/quarantine?${params}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setMessages(data);
@@ -51,48 +76,53 @@ export default function Dashboard() {
     }
   };
 
-  // al montar el componente, ya intentamos fetch (y disparar login si hace falta)
+  // Al autenticarse, cargar automáticamente
   useEffect(() => {
-    fetchMessages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (isAuthenticated && domain) {
+      fetchMessages();
+    }
+  }, [isAuthenticated, domain]);
 
-  return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-6">Quarantine Dashboard</h1>
-
-      <div className="flex mb-6 space-x-2">
-        <input
-          type="text"
-          className="border rounded p-2 flex-1"
-          placeholder="dominio (p.ej. colombiacloud)"
-          value={domain}
-          onChange={(e) => setDomain(e.target.value)}
-        />
-        <button
-          className="bg-blue-600 text-white px-4 rounded disabled:opacity-50"
-          onClick={fetchMessages}
-          disabled={loading}
-        >
-          {loading ? 'Cargando...' : 'Fetch'}
-        </button>
-      </div>
-
-      {error && <p className="text-red-500 mb-4">Error: {error}</p>}
-      {!loading && messages.length === 0 && <p>No se encontraron mensajes.</p>}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {messages.map((msg, idx) => (
-          <div
-            key={idx}
-            className="border rounded-lg p-4 shadow hover:shadow-lg transition"
+  // --- Pantalla de login ---
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-900">
+        <div className="bg-gray-800 p-8 rounded-lg shadow-lg text-center w-full max-w-sm">
+          <h1 className="text-3xl font-bold text-white mb-6">Quarantine Dashboard</h1>
+          {error && <p className="text-red-500 mb-4">{error}</p>}
+          <button
+            onClick={handleLogin}
+            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition"
           >
-            <p><strong>Recibido:</strong> {new Date(msg.ReceivedTime).toLocaleString()}</p>
-            <p><strong>De:</strong> {msg.SenderAddress}</p>
-            <p><strong>Para:</strong> {(Array.isArray(msg.RecipientAddress) ? msg.RecipientAddress.join(', ') : msg.RecipientAddress)}</p>
-            <p><strong>Asunto:</strong> {msg.Subject}</p>
-          </div>
-        ))}
+            Iniciar sesión
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Dashboard principal ---
+  return (
+    <div className="min-h-screen p-6 bg-gray-900">
+      <div className="max-w-7xl mx-auto bg-gray-800 rounded-lg p-6 shadow-lg space-y-6">
+        <h1 className="text-3xl font-extrabold text-white">Quarantine Dashboard</h1>
+
+        <FilterBar
+          from={from} setFrom={setFrom}
+          to={to}     setTo={setTo}
+          type={type} setType={setType}
+          onFilter={fetchMessages}
+        />
+
+        {error && <p className="text-red-500">{error}</p>}
+
+        {loading ? (
+          <p className="text-gray-300">Cargando…</p>
+        ) : messages.length === 0 ? (
+          <p className="text-gray-300">No se encontraron mensajes.</p>
+        ) : (
+          <QuarantineTable messages={messages} />
+        )}
       </div>
     </div>
   );

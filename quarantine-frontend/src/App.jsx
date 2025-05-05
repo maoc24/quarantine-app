@@ -1,42 +1,24 @@
-import { useState, useEffect } from 'react'
-import FilterBar from './components/FilterBar'
-import QuarantineTable from './components/QuarantineTable'
+// src/App.jsx
+import React from 'react';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import QuarantineAdmin from './QuarantineAdmin.jsx';
+import Dashboard from './Dashboard.jsx';
 
-export default function App() {
-  const [filters, setFilters] = useState({
-    query: '',
-    startDate: null,
-    endDate: null
-  })
-  const [msgs, setMsgs]       = useState([])
-  const [loading, setLoading] = useState(false)
+//export default function App() {
+//  return <Dashboard />;
+//}
+ export default function App() {
+   return (
+     <BrowserRouter>
+       <nav className="p-4 bg-gray-200 space-x-4">
+         <Link to="/" className="text-blue-600">Dashboard</Link>
+         <Link to="/admin" className="text-blue-600">Admin Cuarentena</Link>
+       </nav>
+       <Routes>
+         <Route path="/" element={<Dashboard />} />
+         <Route path="/admin" element={<QuarantineAdmin />} />
+       </Routes>
+     </BrowserRouter>
+   );
+ }
 
-  const fetchData = async () => {
-    setLoading(true)
-    // Construye la URL con params:
-    const params = new URLSearchParams()
-    params.set('domain', 'colombiacloud')
-    if (filters.query)      params.set('q', filters.query)
-    if (filters.startDate)  params.set('from', filters.startDate.toISOString())
-    if (filters.endDate)    params.set('to',   filters.endDate.toISOString())
-
-    const res  = await fetch(`http://localhost:5148/api/quarantine?${params}`)
-    const data = await res.json()
-    setMsgs(data)
-    setLoading(false)
-  }
-
-  useEffect(() => {
-    fetchData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  return (
-    <div className="max-w-6xl mx-auto my-6 space-y-6">
-      <FilterBar filters={filters} onChange={setFilters} />
-      {loading
-        ? <p className="p-4">Cargando…</p>
-        : <QuarantineTable messages={msgs} />}
-    </div>
-  )
-}
